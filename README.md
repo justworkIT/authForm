@@ -1,77 +1,142 @@
+<div align="center">
+
 # AuthForm
 
-A reusable signup/login module for Next.js apps: email/password + Google OAuth,
-backed by Supabase Auth, styled with shadcn/ui.
+**A reusable signup/login module for Next.js — email/password + Google OAuth, powered by Supabase Auth and styled with shadcn/ui.**
 
-## What's inside
+[![Next.js](https://img.shields.io/badge/Next.js-14-black?logo=next.js&logoColor=white)](https://nextjs.org/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.6-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![Supabase](https://img.shields.io/badge/Supabase-Auth-3ECF8E?logo=supabase&logoColor=white)](https://supabase.com/)
+[![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-3-06B6D4?logo=tailwindcss&logoColor=white)](https://tailwindcss.com/)
+[![shadcn/ui](https://img.shields.io/badge/shadcn%2Fui-components-000000?logo=shadcnui&logoColor=white)](https://ui.shadcn.com/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
+[![GitHub stars](https://img.shields.io/github/stars/justworkIT/authForm?style=social)](https://github.com/justworkIT/authForm/stargazers)
+[![GitHub issues](https://img.shields.io/github/issues/justworkIT/authForm)](https://github.com/justworkIT/authForm/issues)
+[![Last commit](https://img.shields.io/github/last-commit/justworkIT/authForm)](https://github.com/justworkIT/authForm/commits/main)
+
+</div>
+
+---
+
+## Overview
+
+AuthForm is a drop-in authentication module built for reuse across future SaaS
+projects. It ships with working signup, login, and Google OAuth flows on top
+of Supabase Auth, styled with shadcn/ui — so a new project gets a secure,
+accessible auth screen without re-solving the same problem from scratch.
+
+## Features
+
+- **Email/password auth** — signup and login with server-side validation, duplicate-email handling, and email confirmation
+- **Google OAuth** — one-click sign-in via Supabase's OAuth provider, full redirect flow handled end-to-end
+- **Session management** — middleware-based session refresh so users stay logged in across requests
+- **Protected routes** — example `/dashboard` route showing server-side auth checks and redirects
+- **Accessible by default** — semantic markup, keyboard-operable password toggle, ARIA live regions for form errors
+- **Built for reuse** — no hardcoded project values; drop into a new Next.js + Supabase project by swapping env vars and OAuth credentials
+
+## Tech Stack
+
+| Layer     | Choice                                                                         |
+| --------- | ------------------------------------------------------------------------------ |
+| Framework | [Next.js 14](https://nextjs.org/) (App Router, Server Actions)                 |
+| Auth & DB | [Supabase Auth](https://supabase.com/auth)                                     |
+| UI        | [shadcn/ui](https://ui.shadcn.com/) + [Tailwind CSS](https://tailwindcss.com/) |
+| Language  | TypeScript                                                                     |
+
+## Project Structure
 
 ```
 app/
   (auth)/
-    login/page.tsx        Login route
-    signup/page.tsx        Signup route
-    actions.ts             Server actions: signUpWithEmail, signInWithEmail,
-                            signInWithGoogle, logout
-  auth/callback/route.ts   OAuth + email-confirmation callback handler
-  dashboard/page.tsx        Example protected route
-  layout.tsx / page.tsx     Root layout + redirect-based landing page
+    login/page.tsx          Login route
+    signup/page.tsx         Signup route
+    actions.ts               Server actions: signUpWithEmail, signInWithEmail,
+                              signInWithGoogle, logout
+  auth/callback/route.ts     OAuth + email-confirmation callback handler
+  dashboard/page.tsx         Example protected route
+  layout.tsx / page.tsx      Root layout + redirect-based landing page
 components/
-  auth/                    Form components (signup, login, password field,
-                            status messages, Google button, card shell, logout)
-  ui/                      shadcn/ui primitives (button, input, label, card, separator)
+  auth/                      Form components (signup, login, password field,
+                              status messages, Google button, card shell, logout)
+  ui/                        shadcn/ui primitives (button, input, label, card, separator)
 lib/
   supabase/
-    client.ts               Browser Supabase client
+    client.ts                Browser Supabase client
     server.ts                Server Component / Server Action client
-    middleware.ts            Session refresh logic used by middleware.ts
-middleware.ts                Runs on every request to keep the session cookie fresh
+    middleware.ts             Session refresh logic used by middleware.ts
+middleware.ts                 Runs on every request to keep the session cookie fresh
 ```
 
-## Using this in a new project
+## Getting Started
 
-Every step below has to be redone per project — none of it is shared across apps.
+### 1. Clone the repo
 
-### 1. Create a Supabase project
+```bash
+git clone https://github.com/justworkIT/authForm.git
+cd authForm
+npm install
+```
+
+### 2. Create a Supabase project
+
 - [supabase.com/dashboard](https://supabase.com/dashboard) → New project
 - Copy the Project URL and anon public key from **Settings → API**
 
-### 2. Enable auth providers
-- **Authentication → Providers → Email**: on by default, confirm "Confirm email" matches whether you want email verification before login
-- **Authentication → Providers → Google**: toggle on, then follow Supabase's prompt for the Google Client ID/Secret (see step 3)
-- **Authentication → URL Configuration**: set **Site URL** to your deployed URL (or `http://localhost:3000` during dev), and add `{your-url}/auth/callback` to **Redirect URLs**
+### 3. Enable auth providers
 
-### 3. Set up Google OAuth credentials
+- **Authentication → Providers → Email** — on by default; confirm "Confirm email" matches whether you want email verification before login
+- **Authentication → Providers → Google** — toggle on, then follow Supabase's prompt for the Google Client ID/Secret (see step 4)
+- **Authentication → URL Configuration** — set **Site URL** to your deployed URL (or `http://localhost:3000` during dev), and add `{your-url}/auth/callback` to **Redirect URLs**
+
+### 4. Set up Google OAuth credentials
+
 - [Google Cloud Console](https://console.cloud.google.com/) → APIs & Services → Credentials → Create OAuth client ID (Web application)
 - Authorized redirect URI: the callback URL Supabase's Google provider screen shows you (a `supabase.co` URL, not your app's `/auth/callback`)
 - Paste the resulting Client ID/Secret into Supabase's Google provider settings
 - This step is tied to each Google Cloud project/domain — it does not carry over between apps
 
-### 4. Configure environment variables
+### 5. Configure environment variables
+
 ```bash
 cp .env.local.example .env.local
 ```
-Fill in `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` from step 1.
 
-### 5. Install and run
+Fill in `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` from step 2.
+
+### 6. Run it
+
 ```bash
-npm install
 npm run dev
 ```
 
-Visit `/signup` or `/login`. After auth, users land on `/dashboard` (replace
-this with your app's real landing page — it's just a working example here).
+Visit `/signup` or `/login`. After auth, users land on `/dashboard` (replace this with your app's real landing page — it's a working example here).
 
-## What's copy-paste-ready vs. project-specific
+## Reusing This in a New Project
 
-| Copy as-is | Needs redoing per project |
-|---|---|
-| All files in `components/`, `lib/`, `middleware.ts`, `app/(auth)/`, `app/auth/callback/` | New Supabase project + credentials |
-| Form validation, error handling, accessibility behavior | Google OAuth consent screen / client ID |
-| Session refresh logic | `.env.local` values |
-| | Redirect targets in `actions.ts` / `callback/route.ts` if `/dashboard` isn't your landing page |
+| Copy as-is                                                                               | Needs redoing per project                                                                      |
+| ---------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
+| All files in `components/`, `lib/`, `middleware.ts`, `app/(auth)/`, `app/auth/callback/` | New Supabase project + credentials                                                             |
+| Form validation, error handling, accessibility behavior                                  | Google OAuth consent screen / client ID                                                        |
+| Session refresh logic                                                                    | `.env.local` values                                                                            |
+| —                                                                                        | Redirect targets in `actions.ts` / `callback/route.ts` if `/dashboard` isn't your landing page |
 
-## Notes on design decisions
+## Design Decisions
 
 - **Generic error on bad login** ("Invalid email or password") is intentional — it avoids confirming whether an email is registered.
-- **Server Actions validate independently of the client.** The client-side `required`/`minLength` attributes are just UX; `actions.ts` re-validates everything, since client checks can be bypassed.
-- **`middleware.ts` matcher excludes static assets** so it doesn't run on every image/font request, only real navigations.
+- **Server Actions validate independently of the client.** Client-side `required`/`minLength` attributes are UX only; `actions.ts` re-validates everything, since client checks can be bypassed.
+- **`middleware.ts` matcher excludes static assets** so it runs only on real navigations, not every image/font request.
+
+## Deployment
+
+Deployed easily on [Vercel](https://vercel.com/) — import the repo, add the two Supabase env vars, and deploy. See [Vercel deployment docs](https://vercel.com/docs) for details.
+
+> **Note:** if using Supabase's free tier, projects pause after 7 days without database activity. Fine for local dev; add a scheduled keep-alive ping if hosting a live demo.
+
+## License
+
+Distributed under the MIT License. See `LICENSE` for details.
+
+## Author
+
+Built by [@justworkIT](https://github.com/justworkIT)
