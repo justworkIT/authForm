@@ -26,6 +26,28 @@ projects. It ships with working signup, login, and Google OAuth flows on top
 of Supabase Auth, styled with shadcn/ui — so a new project gets a secure,
 accessible auth screen without re-solving the same problem from scratch.
 
+## Screenshots
+
+<!--
+  Add real screenshots/GIFs once the app is deployed. Suggested shots:
+  - Login page (desktop)
+  - Signup page (desktop)
+  - Password visibility toggle in action (GIF)
+  - Google OAuth flow (GIF)
+  - Dashboard after login
+  Save images to /docs/screenshots/ and reference them below.
+-->
+
+<div align="center">
+
+| Login | Signup |
+|---|---|
+| ![Login screenshot placeholder](./docs/screenshots/login.png) | ![Signup screenshot placeholder](./docs/screenshots/signup.png) |
+
+</div>
+
+*Screenshots coming soon — replace the placeholders above once deployed.*
+
 ## Features
 
 - **Email/password auth** — signup and login with server-side validation, duplicate-email handling, and email confirmation
@@ -37,12 +59,12 @@ accessible auth screen without re-solving the same problem from scratch.
 
 ## Tech Stack
 
-| Layer     | Choice                                                                         |
-| --------- | ------------------------------------------------------------------------------ |
-| Framework | [Next.js 14](https://nextjs.org/) (App Router, Server Actions)                 |
-| Auth & DB | [Supabase Auth](https://supabase.com/auth)                                     |
-| UI        | [shadcn/ui](https://ui.shadcn.com/) + [Tailwind CSS](https://tailwindcss.com/) |
-| Language  | TypeScript                                                                     |
+| Layer | Choice |
+|---|---|
+| Framework | [Next.js 14](https://nextjs.org/) (App Router, Server Actions) |
+| Auth & DB | [Supabase Auth](https://supabase.com/auth) |
+| UI | [shadcn/ui](https://ui.shadcn.com/) + [Tailwind CSS](https://tailwindcss.com/) |
+| Language | TypeScript |
 
 ## Project Structure
 
@@ -71,7 +93,6 @@ middleware.ts                 Runs on every request to keep the session cookie f
 ## Getting Started
 
 ### 1. Clone the repo
-
 ```bash
 git clone https://github.com/justworkIT/authForm.git
 cd authForm
@@ -79,47 +100,40 @@ npm install
 ```
 
 ### 2. Create a Supabase project
-
 - [supabase.com/dashboard](https://supabase.com/dashboard) → New project
 - Copy the Project URL and anon public key from **Settings → API**
 
 ### 3. Enable auth providers
-
 - **Authentication → Providers → Email** — on by default; confirm "Confirm email" matches whether you want email verification before login
 - **Authentication → Providers → Google** — toggle on, then follow Supabase's prompt for the Google Client ID/Secret (see step 4)
 - **Authentication → URL Configuration** — set **Site URL** to your deployed URL (or `http://localhost:3000` during dev), and add `{your-url}/auth/callback` to **Redirect URLs**
 
 ### 4. Set up Google OAuth credentials
-
 - [Google Cloud Console](https://console.cloud.google.com/) → APIs & Services → Credentials → Create OAuth client ID (Web application)
 - Authorized redirect URI: the callback URL Supabase's Google provider screen shows you (a `supabase.co` URL, not your app's `/auth/callback`)
 - Paste the resulting Client ID/Secret into Supabase's Google provider settings
 - This step is tied to each Google Cloud project/domain — it does not carry over between apps
 
 ### 5. Configure environment variables
-
 ```bash
 cp .env.local.example .env.local
 ```
-
 Fill in `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` from step 2.
 
 ### 6. Run it
-
 ```bash
 npm run dev
 ```
-
 Visit `/signup` or `/login`. After auth, users land on `/dashboard` (replace this with your app's real landing page — it's a working example here).
 
 ## Reusing This in a New Project
 
-| Copy as-is                                                                               | Needs redoing per project                                                                      |
-| ---------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
-| All files in `components/`, `lib/`, `middleware.ts`, `app/(auth)/`, `app/auth/callback/` | New Supabase project + credentials                                                             |
-| Form validation, error handling, accessibility behavior                                  | Google OAuth consent screen / client ID                                                        |
-| Session refresh logic                                                                    | `.env.local` values                                                                            |
-| —                                                                                        | Redirect targets in `actions.ts` / `callback/route.ts` if `/dashboard` isn't your landing page |
+| Copy as-is | Needs redoing per project |
+|---|---|
+| All files in `components/`, `lib/`, `middleware.ts`, `app/(auth)/`, `app/auth/callback/` | New Supabase project + credentials |
+| Form validation, error handling, accessibility behavior | Google OAuth consent screen / client ID |
+| Session refresh logic | `.env.local` values |
+| — | Redirect targets in `actions.ts` / `callback/route.ts` if `/dashboard` isn't your landing page |
 
 ## Design Decisions
 
@@ -131,7 +145,19 @@ Visit `/signup` or `/login`. After auth, users land on `/dashboard` (replace thi
 
 Deployed easily on [Vercel](https://vercel.com/) — import the repo, add the two Supabase env vars, and deploy. See [Vercel deployment docs](https://vercel.com/docs) for details.
 
-> **Note:** if using Supabase's free tier, projects pause after 7 days without database activity. Fine for local dev; add a scheduled keep-alive ping if hosting a live demo.
+### Keeping Supabase awake (free tier)
+
+Supabase free-tier projects pause after 7 days without database activity. This repo includes a GitHub Action (`.github/workflows/supabase-keepalive.yml`) that pings the database twice a week to prevent that. To enable it:
+
+1. Run the migration in `supabase/migrations/0001_keepalive.sql` against your Supabase project (paste it into the SQL Editor in the Supabase dashboard, or apply via the Supabase CLI)
+2. In your GitHub repo, go to **Settings → Secrets and variables → Actions** and add:
+   - `SUPABASE_URL` — your project URL
+   - `SUPABASE_SERVICE_ROLE_KEY` — from **Settings → API** in Supabase (this key bypasses RLS, so it's only ever used server-side in the Action, never in the app itself)
+3. The workflow runs automatically on its schedule, or trigger it manually from the **Actions** tab (`Supabase Keep-Alive` → **Run workflow**) to test it immediately
+
+## Contributing
+
+Contributions are welcome — see [CONTRIBUTING.md](./CONTRIBUTING.md) for branch naming, commit conventions, and the PR checklist.
 
 ## License
 
