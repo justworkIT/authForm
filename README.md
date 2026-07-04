@@ -28,25 +28,13 @@ accessible auth screen without re-solving the same problem from scratch.
 
 ## Screenshots
 
-<!--
-  Add real screenshots/GIFs once the app is deployed. Suggested shots:
-  - Login page (desktop)
-  - Signup page (desktop)
-  - Password visibility toggle in action (GIF)
-  - Google OAuth flow (GIF)
-  - Dashboard after login
-  Save images to /docs/screenshots/ and reference them below.
--->
-
 <div align="center">
 
-| Login | Signup |
-|---|---|
+| Login                                                         | Signup                                                          |
+| ------------------------------------------------------------- | --------------------------------------------------------------- |
 | ![Login screenshot placeholder](./docs/screenshots/login.png) | ![Signup screenshot placeholder](./docs/screenshots/signup.png) |
 
 </div>
-
-*Screenshots coming soon — replace the placeholders above once deployed.*
 
 ## Features
 
@@ -61,12 +49,12 @@ accessible auth screen without re-solving the same problem from scratch.
 
 ## Tech Stack
 
-| Layer | Choice |
-|---|---|
-| Framework | [Next.js 14](https://nextjs.org/) (App Router, Server Actions) |
-| Auth & DB | [Supabase Auth](https://supabase.com/auth) |
-| UI | [shadcn/ui](https://ui.shadcn.com/) + [Tailwind CSS](https://tailwindcss.com/) |
-| Language | TypeScript |
+| Layer     | Choice                                                                         |
+| --------- | ------------------------------------------------------------------------------ |
+| Framework | [Next.js 14](https://nextjs.org/) (App Router, Server Actions)                 |
+| Auth & DB | [Supabase Auth](https://supabase.com/auth)                                     |
+| UI        | [shadcn/ui](https://ui.shadcn.com/) + [Tailwind CSS](https://tailwindcss.com/) |
+| Language  | TypeScript                                                                     |
 
 ## Project Structure
 
@@ -98,6 +86,7 @@ middleware.ts                 Runs on every request to keep the session cookie f
 ## Getting Started
 
 ### 1. Clone the repo
+
 ```bash
 git clone https://github.com/justworkIT/authForm.git
 cd authForm
@@ -105,40 +94,47 @@ npm install
 ```
 
 ### 2. Create a Supabase project
+
 - [supabase.com/dashboard](https://supabase.com/dashboard) → New project
 - Copy the Project URL and anon public key from **Settings → API**
 
 ### 3. Enable auth providers
+
 - **Authentication → Providers → Email** — on by default; confirm "Confirm email" matches whether you want email verification before login
 - **Authentication → Providers → Google** — toggle on, then follow Supabase's prompt for the Google Client ID/Secret (see step 4)
 - **Authentication → URL Configuration** — set **Site URL** to your deployed URL (or `http://localhost:3000` during dev), and add `{your-url}/auth/callback` to **Redirect URLs**
 
 ### 4. Set up Google OAuth credentials
+
 - [Google Cloud Console](https://console.cloud.google.com/) → APIs & Services → Credentials → Create OAuth client ID (Web application)
 - Authorized redirect URI: the callback URL Supabase's Google provider screen shows you (a `supabase.co` URL, not your app's `/auth/callback`)
 - Paste the resulting Client ID/Secret into Supabase's Google provider settings
 - This step is tied to each Google Cloud project/domain — it does not carry over between apps
 
 ### 5. Configure environment variables
+
 ```bash
 cp .env.local.example .env.local
 ```
+
 Fill in `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` from step 2.
 
 ### 6. Run it
+
 ```bash
 npm run dev
 ```
+
 Visit `/signup` or `/login`. After auth, users land on `/dashboard` (replace this with your app's real landing page — it's a working example here).
 
 ## Reusing This in a New Project
 
-| Copy as-is | Needs redoing per project |
-|---|---|
-| All files in `components/`, `lib/`, `middleware.ts`, `app/(auth)/`, `app/auth/callback/` | New Supabase project + credentials |
-| Form validation, error handling, accessibility behavior | Google OAuth consent screen / client ID |
-| Session refresh logic | `.env.local` values |
-| — | Redirect targets in `actions.ts` / `callback/route.ts` if `/dashboard` isn't your landing page |
+| Copy as-is                                                                               | Needs redoing per project                                                                      |
+| ---------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
+| All files in `components/`, `lib/`, `middleware.ts`, `app/(auth)/`, `app/auth/callback/` | New Supabase project + credentials                                                             |
+| Form validation, error handling, accessibility behavior                                  | Google OAuth consent screen / client ID                                                        |
+| Session refresh logic                                                                    | `.env.local` values                                                                            |
+| —                                                                                        | Redirect targets in `actions.ts` / `callback/route.ts` if `/dashboard` isn't your landing page |
 
 ## Design Decisions
 
@@ -149,11 +145,13 @@ Visit `/signup` or `/login`. After auth, users land on `/dashboard` (replace thi
 ## Testing
 
 **Unit tests** (Vitest) cover the pure validation logic in `lib/validation.ts`:
+
 ```bash
 npm test
 ```
 
 **E2E tests** (Playwright) cover signup, login, password reset, protected-route redirects, and the password visibility toggle, run against a real dev server and real Supabase project:
+
 ```bash
 npm run test:e2e
 ```
@@ -173,6 +171,38 @@ Supabase free-tier projects pause after 7 days without database activity. This r
    - `SUPABASE_URL` — your project URL
    - `SUPABASE_SERVICE_ROLE_KEY` — from **Settings → API** in Supabase (this key bypasses RLS, so it's only ever used server-side in the Action, never in the app itself)
 3. The workflow runs automatically on its schedule, or trigger it manually from the **Actions** tab (`Supabase Keep-Alive` → **Run workflow**) to test it immediately
+
+## Troubleshooting
+
+Real issues hit while building and deploying this project, kept here so they don't get hit twice.
+
+### `MIDDLEWARE_INVOCATION_FAILED` on Vercel
+
+**Cause:** `NEXT_PUBLIC_SUPABASE_URL` / `NEXT_PUBLIC_SUPABASE_ANON_KEY` weren't set in Vercel's project settings — `.env.local` only exists on your machine and is never read by Vercel.
+
+**Fix:** Add both vars in Vercel → **Settings → Environment Variables** (all three environments: Production, Preview, Development), then **redeploy** — Vercel does not retroactively apply new env vars to existing deployments; you must trigger a new one.
+
+### Reset link lands on `/login` with `#error=access_denied&error_code=otp_expired`
+
+**Cause:** The `redirectTo` URL used in `resetPasswordForEmail` (`/auth/callback?next=/reset-password`) wasn't in Supabase's allow-listed Redirect URLs, so Supabase silently fell back to the Site URL and appended the error as a hash fragment.
+
+**Fix:** Supabase dashboard → **Authentication → URL Configuration → Redirect URLs**, add a wildcard: `https://your-domain.com/**`. This covers `/auth/callback` and any future paths, so you won't need to update it again per route.
+
+**Secondary cause to rule out:** email security scanners in some corporate/email-client environments "prefetch" links inside emails, consuming the single-use reset token before the real user clicks it. If the allow-list is correct and this still happens, test with a personal (non-corporate) email address.
+
+### Reset email never arrives, no error shown
+
+**Cause:** Supabase's built-in email service caps out at **2 emails/hour, project-wide** (not per-user) — it's dev/testing-only, not for production. Confirmed by checking Supabase → **Logs → Auth Logs** for repeated `429` responses on `POST /auth/v1/recover`.
+
+**Fix:** Set up custom SMTP (see below). There is no way to raise this limit on the default service.
+
+### Setting up custom SMTP (Brevo)
+
+1. Verify a sender domain in Brevo (**Settings → Senders, Domains & Dedicated IPs → Domains → Add a domain**) — requires DNS access, so it must be a domain you actually own (a `vercel.app` subdomain won't work, since you don't control its DNS)
+2. Add the TXT/DKIM records Brevo gives you at your DNS provider; wait for propagation (minutes to ~24h)
+3. Generate an **SMTP key** at **Settings → Senders, Domains & Dedicated IPs → SMTP & API → SMTP tab** — ⚠️ this is a different credential from the API key on the adjacent **API Keys** tab; using the API key as the SMTP password will fail auth
+4. In Supabase → **Authentication → Emails → SMTP Settings**, enter host `smtp-relay.brevo.com`, port `587`, the SMTP login (looks like `xxxxx@smtp-brevo.com`, shown on the same SMTP tab), and the SMTP key as the password
+5. ⚠️ Supabase's host field doesn't trim whitespace — a stray leading/trailing space pasted into the host field produces a "no such host" error in Auth Logs that has nothing to do with your actual credentials
 
 ## Contributing
 
