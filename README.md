@@ -40,29 +40,33 @@ accessible auth screen without re-solving the same problem from scratch.
 
 <div align="center">
 
-| Login                                                         | Signup                                                          |
-| ------------------------------------------------------------- | --------------------------------------------------------------- |
+| Login | Signup |
+|---|---|
 | ![Login screenshot placeholder](./docs/screenshots/login.png) | ![Signup screenshot placeholder](./docs/screenshots/signup.png) |
 
 </div>
 
+*Screenshots coming soon — replace the placeholders above once deployed.*
+
 ## Features
 
 - **Email/password auth** — signup and login with server-side validation, duplicate-email handling, and email confirmation
+- **Password reset** — forgot-password request and set-new-password flow, with generic responses that avoid confirming which emails have accounts
 - **Google OAuth** — one-click sign-in via Supabase's OAuth provider, full redirect flow handled end-to-end
 - **Session management** — middleware-based session refresh so users stay logged in across requests
 - **Protected routes** — example `/dashboard` route showing server-side auth checks and redirects
 - **Accessible by default** — semantic markup, keyboard-operable password toggle, ARIA live regions for form errors
+- **Tested** — unit tests (Vitest) for validation logic, e2e tests (Playwright) for signup/login/reset flows
 - **Built for reuse** — no hardcoded project values; drop into a new Next.js + Supabase project by swapping env vars and OAuth credentials
 
 ## Tech Stack
 
-| Layer     | Choice                                                                         |
-| --------- | ------------------------------------------------------------------------------ |
-| Framework | [Next.js 14](https://nextjs.org/) (App Router, Server Actions)                 |
-| Auth & DB | [Supabase Auth](https://supabase.com/auth)                                     |
-| UI        | [shadcn/ui](https://ui.shadcn.com/) + [Tailwind CSS](https://tailwindcss.com/) |
-| Language  | TypeScript                                                                     |
+| Layer | Choice |
+|---|---|
+| Framework | [Next.js 14](https://nextjs.org/) (App Router, Server Actions) |
+| Auth & DB | [Supabase Auth](https://supabase.com/auth) |
+| UI | [shadcn/ui](https://ui.shadcn.com/) + [Tailwind CSS](https://tailwindcss.com/) |
+| Language | TypeScript |
 
 ## Project Structure
 
@@ -71,9 +75,12 @@ app/
   (auth)/
     login/page.tsx          Login route
     signup/page.tsx         Signup route
+    forgot-password/page.tsx Request a password reset link
     actions.ts               Server actions: signUpWithEmail, signInWithEmail,
-                              signInWithGoogle, logout
-  auth/callback/route.ts     OAuth + email-confirmation callback handler
+                              signInWithGoogle, logout, requestPasswordReset,
+                              updatePassword
+  auth/callback/route.ts     OAuth + email-confirmation + reset-link callback handler
+  reset-password/page.tsx    Set a new password (requires active recovery session)
   dashboard/page.tsx         Example protected route
   layout.tsx / page.tsx      Root layout + redirect-based landing page
 components/
@@ -91,7 +98,6 @@ middleware.ts                 Runs on every request to keep the session cookie f
 ## Getting Started
 
 ### 1. Clone the repo
-
 ```bash
 git clone https://github.com/justworkIT/authForm.git
 cd authForm
@@ -99,53 +105,60 @@ npm install
 ```
 
 ### 2. Create a Supabase project
-
 - [supabase.com/dashboard](https://supabase.com/dashboard) → New project
 - Copy the Project URL and anon public key from **Settings → API**
 
 ### 3. Enable auth providers
-
 - **Authentication → Providers → Email** — on by default; confirm "Confirm email" matches whether you want email verification before login
 - **Authentication → Providers → Google** — toggle on, then follow Supabase's prompt for the Google Client ID/Secret (see step 4)
 - **Authentication → URL Configuration** — set **Site URL** to your deployed URL (or `http://localhost:3000` during dev), and add `{your-url}/auth/callback` to **Redirect URLs**
 
 ### 4. Set up Google OAuth credentials
-
 - [Google Cloud Console](https://console.cloud.google.com/) → APIs & Services → Credentials → Create OAuth client ID (Web application)
 - Authorized redirect URI: the callback URL Supabase's Google provider screen shows you (a `supabase.co` URL, not your app's `/auth/callback`)
 - Paste the resulting Client ID/Secret into Supabase's Google provider settings
 - This step is tied to each Google Cloud project/domain — it does not carry over between apps
 
 ### 5. Configure environment variables
-
 ```bash
 cp .env.local.example .env.local
 ```
-
 Fill in `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` from step 2.
 
 ### 6. Run it
-
 ```bash
 npm run dev
 ```
-
 Visit `/signup` or `/login`. After auth, users land on `/dashboard` (replace this with your app's real landing page — it's a working example here).
 
 ## Reusing This in a New Project
 
-| Copy as-is                                                                               | Needs redoing per project                                                                      |
-| ---------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
-| All files in `components/`, `lib/`, `middleware.ts`, `app/(auth)/`, `app/auth/callback/` | New Supabase project + credentials                                                             |
-| Form validation, error handling, accessibility behavior                                  | Google OAuth consent screen / client ID                                                        |
-| Session refresh logic                                                                    | `.env.local` values                                                                            |
-| —                                                                                        | Redirect targets in `actions.ts` / `callback/route.ts` if `/dashboard` isn't your landing page |
+| Copy as-is | Needs redoing per project |
+|---|---|
+| All files in `components/`, `lib/`, `middleware.ts`, `app/(auth)/`, `app/auth/callback/` | New Supabase project + credentials |
+| Form validation, error handling, accessibility behavior | Google OAuth consent screen / client ID |
+| Session refresh logic | `.env.local` values |
+| — | Redirect targets in `actions.ts` / `callback/route.ts` if `/dashboard` isn't your landing page |
 
 ## Design Decisions
 
 - **Generic error on bad login** ("Invalid email or password") is intentional — it avoids confirming whether an email is registered.
 - **Server Actions validate independently of the client.** Client-side `required`/`minLength` attributes are UX only; `actions.ts` re-validates everything, since client checks can be bypassed.
 - **`middleware.ts` matcher excludes static assets** so it runs only on real navigations, not every image/font request.
+
+## Testing
+
+**Unit tests** (Vitest) cover the pure validation logic in `lib/validation.ts`:
+```bash
+npm test
+```
+
+**E2E tests** (Playwright) cover signup, login, password reset, protected-route redirects, and the password visibility toggle, run against a real dev server and real Supabase project:
+```bash
+npm run test:e2e
+```
+
+> ⚠️ Run e2e tests against a **dev/test Supabase project only** — the signup tests create real (throwaway) user accounts. Flows requiring email inbox access (confirming a signup, clicking a reset link) aren't covered by this starter suite; wiring up an email-testing service (e.g. Mailosaur, Ethereal) is a good next step if you need full coverage.
 
 ## Deployment
 
